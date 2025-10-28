@@ -8,6 +8,10 @@ RUN apk add --no-cache make gcc g++ python3
 
 WORKDIR /app
 
+# Копируем зависимости и Prisma-схему
+COPY package.json yarn.lock ./
+COPY prisma ./prisma
+
 # Копируем файлы для установки зависимостей
 COPY package.json yarn.lock ./
 
