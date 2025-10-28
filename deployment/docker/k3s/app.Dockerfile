@@ -12,8 +12,10 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # Устанавливаем все зависимости (включая devDependencies для сборки)
-RUN yarn install --frozen-lockfile
+RUN yarn install
 
+# Генерация Prisma клиентских файлов
+RUN npx prisma generate
 
 
 # Этап 2: Сборка приложения
