@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement()) @map("id") // id пользователя
+  login      String   @unique @map("login") // логин пользователя
+  password   String   @map("password") // пароль пользователя
+  name       String   @map("name") // имя пользователя
+  position   String   @map("position") // должность пользователя
+  role       String   @default("user") @map("role") // "admin" or "moderator" or "user"
+  created_at DateTime @default(now()) @map("created_at") // дата создания пользователя
+  updated_at DateTime @updatedAt @map("updated_at") // дата обновления пользователя
+
+  rates       UserRate[]  @relation("UserRates") // ставки пользователя
+  time_tracks TimeTrack[] @relation("UserTimeTracks") // записи времени пользователя
+
+  @@map("users")
+}
+
+model UserRate {
+  id         Int       @id @default(autoincrement()) @map("id") // id ставки пользователя
+  user_id    Int       @map("user_id") // id пользователя
+  rate       Float     @map("rate") // ставка в час (в рублях)
+  valid_from DateTime  @map("valid_from") // с какой даты ставка действует
+
+  user User @relation("UserRates", fields: [user_id], references: [id], onDelete: Cascade) // пользователь
+
+  @@unique([user_id, valid_from]) // уникальный индекс на пользователя и дату начала действия ставки
+  @@map("user_rates") // название таблицы в базе данных
+}
+
+model TimeTrack {
+  id         Int      @id @default(autoincrement()) @map("id") // id записи времени
+  user_id    Int      @map("user_id") // id пользователя
+  date       DateTime @map("date") // дата записи времени
+  time       Int      @map("time") // время в минутах
+  comment    String   @map("comment") // комментарий к записи времени
+  was_paid   Boolean  @default(false) @map("was_paid") // была ли оплата
+  created_at DateTime @default(now()) @map("created_at") // дата создания записи времени
+  updated_at DateTime @updatedAt @map("updated_at") // дата обновления записи времени
+
+  user User @relation("UserTimeTracks", fields: [user_id], references: [id], onDelete: Cascade) // пользователь
+
+  @@map("time_tracks")
+}
