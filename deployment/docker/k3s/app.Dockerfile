@@ -62,7 +62,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Копируем скрипты для инициализации БД
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
-COPY --from=builder --chown=nextjs:nodejs /app/data ./data
 
 # Переключаемся на непривилегированного пользователя
 USER nextjs
