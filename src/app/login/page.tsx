@@ -1,20 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { config } from '@/lib/config'
 
 export default function LoginPage() {
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [loginError, setLoginError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    setLoginError('')
     setLoading(true)
 
     try {
@@ -25,12 +25,12 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError('Неверный логин или пароль')
+        setLoginError('Неверный логин или пароль')
       } else {
         router.push('/dashboard')
       }
-    } catch (error) {
-      setError('Произошла ошибка при входе')
+    } catch {
+      setLoginError('Произошла ошибка при входе')
     } finally {
       setLoading(false)
     }
@@ -81,9 +81,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && (
+          {loginError && (
             <div className="text-red-600 text-sm text-center">
-              {error}
+              {loginError}
             </div>
           )}
 

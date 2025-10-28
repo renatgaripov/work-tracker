@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { Plus, Clock } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 // Кастомная локаль для правильного отображения месяцев в именительном падеже
 const customRuLocale = {
@@ -53,10 +53,11 @@ export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, 
   // Добавляем пустые дни в начале месяца для правильного отображения
   // В России неделя начинается с понедельника (1), а не с воскресенья (0)
   const firstDayOfWeek = monthStart.getDay()
-  const emptyDays = Array.from({ length: firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1 }, (_, i) => null)
+  const emptyDays = Array.from({ length: firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1 }, () => null)
 
   useEffect(() => {
     fetchTimeTracks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate, userId])
 
   // Синхронизируем с внешним состоянием месяца
@@ -64,6 +65,7 @@ export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, 
     if (currentMonth && !isSameMonth(currentMonth, currentDate)) {
       setCurrentDate(currentMonth)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMonth])
 
   const fetchTimeTracks = async () => {

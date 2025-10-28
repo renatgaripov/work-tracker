@@ -52,12 +52,13 @@ interface StatisticsProps {
   refreshKey?: number
 }
 
-export default function Statistics({ userId, selectedMonth, onGoToToday, refreshKey }: StatisticsProps) {
+export default function Statistics({ userId, selectedMonth, refreshKey }: StatisticsProps) {
   const [stats, setStats] = useState<Statistics | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchStatistics()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, userId, refreshKey])
 
   const fetchStatistics = async () => {

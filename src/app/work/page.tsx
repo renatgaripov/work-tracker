@@ -72,12 +72,14 @@ export default function StatisticsPage() {
       setSelectedUserId(parseInt(session.user.id))
       fetchMonthlyStats()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status, router])
 
   useEffect(() => {
     if (selectedUserId) {
       fetchMonthlyStats(true) // Сохраняем выбор месяца при смене пользователя
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUserId])
 
   // Закрываем dropdown при клике вне его

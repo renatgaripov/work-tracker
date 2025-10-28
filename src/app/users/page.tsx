@@ -64,6 +64,7 @@ export default function UsersPage() {
     } else {
       fetchUsers()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status, router])
 
   const fetchUsers = async () => {

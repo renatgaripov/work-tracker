@@ -38,6 +38,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, onTimeUpdated, 
     if (isOpen) {
       fetchDayDetails()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, date, userId])
 
   const fetchDayDetails = async () => {

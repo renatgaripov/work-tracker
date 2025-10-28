@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/navigation'
 import UserSelector from '@/components/user-selector'
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
+import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { TrendingUp, DollarSign } from 'lucide-react'
 import { useToast, ToastContainer } from '@/components/toast'
@@ -40,7 +40,7 @@ interface MonthlyEarnings {
 export default function AnalyticsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { toasts, success, error, removeToast } = useToast()
+  const { toasts, error, removeToast } = useToast()
   const [monthlyData, setMonthlyData] = useState<MonthlyEarnings[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
@@ -55,12 +55,14 @@ export default function AnalyticsPage() {
       setSelectedUserId(parseInt(session.user.id))
       fetchAnalytics()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status, router])
 
   useEffect(() => {
     if (selectedUserId) {
       fetchAnalytics()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUserId])
 
   const fetchAnalytics = async () => {

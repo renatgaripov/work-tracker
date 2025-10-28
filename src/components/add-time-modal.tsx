@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { X, Clock, Save, ChevronDown } from 'lucide-react'
+import { X, Clock, Save } from 'lucide-react'
 import { useToast } from '@/components/toast'
 
 interface AddTimeModalProps {
