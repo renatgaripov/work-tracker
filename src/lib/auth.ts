@@ -35,26 +35,3 @@ export async function findUserByLogin(login: string) {
     });
 }
 
-export async function seedUsers() {
-    // Проверяем, есть ли уже пользователи
-    const existingUsers = await prisma.user.count();
-
-    if (existingUsers > 0) {
-        console.log('Пользователи уже существуют, пропускаем создание');
-        return;
-    }
-
-    // Создаем админа
-    await createUser('admin', 'admin', 'Администратор', 'Администратор системы', 'admin');
-
-    // Создаем модератора
-    await createUser('moderator', 'moderator', 'Модератор', 'Модератор системы', 'moderator');
-
-    // Создаем разработчика
-    await createUser('user', 'user', 'Пользователь', 'Разработчик', 'user');
-
-    console.log('Тестовые пользователи созданы:');
-    console.log('- admin / admin (администратор)');
-    console.log('- moderator / moderator (модератор)');
-    console.log('- user / user (разработчик)');
-}
