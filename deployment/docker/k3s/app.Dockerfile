@@ -14,6 +14,8 @@ COPY package.json yarn.lock ./
 # Устанавливаем все зависимости (включая devDependencies для сборки)
 RUN yarn install --frozen-lockfile
 
+
+
 # Этап 2: Сборка приложения
 FROM node:22-alpine3.22 AS builder
 
@@ -30,6 +32,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Собираем Next.js приложение
 RUN yarn build
+
+
 
 # Этап 3: Финальный образ для запуска
 FROM node:22-alpine3.22 AS runner

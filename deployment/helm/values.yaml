@@ -4,4 +4,4 @@ image:
 
 deploy:
   projectName: work-tracker
-  containerPort: 
+  containerPort: 3003
