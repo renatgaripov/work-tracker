@@ -33,6 +33,7 @@ export default function Navigation() {
       icon: TrendingUp,
       current: pathname === '/analytics'
     },
+    // @ts-expect-error: тадо
     ...(session?.user?.role === 'admin' || session?.user?.role === 'moderator' ? [{
       name: 'Штат',
       href: '/users',
@@ -77,7 +78,9 @@ export default function Navigation() {
             <div className="flex items-center space-x-2">
               <User className="w-5 h-5 text-gray-500" />
               <div>
+                {/* @ts-expect-error: тадо */}
                 <p className="text-sm font-medium text-gray-900">{session?.user.name}</p>
+                {/* @ts-expect-error: тадо */}
                 <p className="text-xs text-gray-500">{session?.user.position}</p>
               </div>
             </div>

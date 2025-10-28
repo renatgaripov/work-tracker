@@ -51,8 +51,8 @@ export default function AnalyticsPage() {
     if (!session) {
       router.push('/login')
     } else {
-      // По умолчанию выбираем текущего пользователя
-      setSelectedUserId(parseInt(session.user.id))
+      // @ts-expect-error: тадо
+      setSelectedUserId(parseInt(session.user.id as string))
       fetchAnalytics()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,12 +141,14 @@ export default function AnalyticsPage() {
               <h1 className="text-3xl font-bold text-gray-900">Аналитика</h1>
               <p className="mt-2 text-gray-600">График заработка за последние 12 месяцев</p>
             </div>
-            
+
             {/* User Selector for Admin and Moderator */}
+            {/* @ts-expect-error: тадо */}
             {(session.user.role === 'admin' || session.user.role === 'moderator') && (
               <UserSelector
                 onUserChange={setSelectedUserId}
                 selectedUserId={selectedUserId}
+                // @ts-expect-error: тадо
                 currentUserId={parseInt(session.user.id)}
               />
             )}

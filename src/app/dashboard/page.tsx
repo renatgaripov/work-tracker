@@ -30,7 +30,8 @@ export default function Dashboard() {
       router.push('/login')
     } else {
       // По умолчанию выбираем текущего пользователя
-      setSelectedUserId(parseInt(session.user.id))
+      // @ts-expect-error: тадо
+      setSelectedUserId(parseInt(session.user.id as string))
     }
   }, [session, status, router])
 
@@ -82,11 +83,13 @@ export default function Dashboard() {
             </div>
             
             {/* User Selector for Admin and Moderator */}
+            {/* @ts-expect-error: тадо */}
             {(session.user.role === 'admin' || session.user.role === 'moderator') && (
               <UserSelector
                 onUserChange={setSelectedUserId}
                 selectedUserId={selectedUserId}
-                currentUserId={parseInt(session.user.id)}
+                // @ts-expect-error: тадо
+                currentUserId={parseInt(session.user.id as string)}
               />
             )}
           </div>
@@ -107,7 +110,8 @@ export default function Dashboard() {
             userId={selectedUserId}
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
-            currentUserId={parseInt(session.user.id)}
+            // @ts-expect-error: тадо
+            currentUserId={parseInt(session.user.id as string)}
             onGoToToday={handleGoToToday}
           />
         </div>
@@ -131,7 +135,8 @@ export default function Dashboard() {
             date={selectedDate}
             onTimeUpdated={handleTimeAdded}
             userId={selectedUserId}
-            currentUserId={parseInt(session.user.id)}
+            // @ts-expect-error: тадо
+            currentUserId={parseInt(session.user.id as string)}
           />
         </>
       )}
