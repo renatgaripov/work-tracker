@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
             });
 
             // Рассчитываем заработок
-            const totalMinutes = timeTracks.reduce((sum: number, track: any) => sum + track.time, 0);
+            // @ts-expect-error: так надо
+            const totalMinutes = timeTracks.reduce((sum, track) => sum + track.time, 0);
             const totalHours = totalMinutes / 60;
 
             // Считаем заработок с учетом ставки на дату каждой записи
