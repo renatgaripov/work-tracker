@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.deploy.projectName }}
+  name: {{ .Values.deploy.projectName }}
+spec:
+  ports:
+    - name: "80"
+      port: 80
+      targetPort: {{ .Values.deploy.containerPort }}
+  selector:
+    app: {{ .Values.deploy.projectName }}

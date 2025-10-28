@@ -1,0 +1,8 @@
+image:
+  repository: ghcr.io/renatgaripov/work-tracker/node-app-main
+
+deploy:
+  projectDomain: "work-tracker.socialjet.pro"
+
+configMapData:
+

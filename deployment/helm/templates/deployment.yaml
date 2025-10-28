@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: regcred
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: >-
+    eyJhdXRocyI6eyJnaGNyLmlvIjp7InVzZXJuYW1lIjoicmVuYXRAc29jaWFsamV0LnBybyIsInBhc3N3b3JkIjoiZ2hwX2E0VVJyYkh2T1NMODl1aXZtaGQyVkpTNDQ1ZUQwTTBpZmoySCIsImF1dGgiOiJjbVZ1WVhSQWMyOWphV0ZzYW1WMExuQnlienBuYUhCZllUUlZVbkppU0haUFUwdzRPWFZwZG0xb1pESldTbE0wTkRWbFJEQk5NR2xtYWpKSUNnPT0ifX19Cg==
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.deploy.projectName }}
+  name: {{ .Values.deploy.projectName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.deploy.projectName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deploy.projectName }}
+    spec:
+      restartPolicy: Always
+      imagePullSecrets:
+      - name: regcred
+      containers:
+        - name: {{ .Values.deploy.projectName }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.deploy.projectName }}-secret
+            - configMapRef:
+                name: {{ .Values.deploy.projectName }}-env
+          ports:
+            - containerPort: {{ .Values.deploy.containerPort }}
+          tty: true
+          volumeMounts:
+            - mountPath: /mnt/sqlite_db
+              name: work-tracker-db-pv
+
+      volumes:
+        - name: work-tracker-db-pv
+          persistentVolumeClaim:
+            claimName: work-tracker-db-pv-claim
