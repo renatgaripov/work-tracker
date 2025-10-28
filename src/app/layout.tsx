@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: config.company_name,
   description: "Система учета времени сотрудников",
+  icons: {
+    icon: '/time-tracker-icon.svg',
+  },
 };
 
 export default function RootLayout({

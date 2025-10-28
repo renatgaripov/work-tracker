@@ -1,12 +1,32 @@
 {
-  "name": "tracker",
-  "version": "0.1.0",
+  "name": "work-tracker",
+  "version": "1.0.0",
+  "description": "Worker Time Tracker Application",
+  "author": "ASt",
   "private": true,
+  "license": "UNLICENSED",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint",
+    "prisma:version": "yarn prisma version",
+    "prisma:debug": "yarn prisma debug",
+    "prisma:format": "yarn prisma format",
+    "prisma:validate": "yarn prisma validate",
+    "prisma:generate": "yarn prisma generate",
+    "prisma:studio": "yarn prisma studio",
+    "prisma:pull": "yarn prisma db pull",
+    "prisma:push": "yarn prisma db push",
+    "prisma:seed": "yarn prisma db seed",
+    "migrate:create": "yarn prisma migrate dev --create-only",
+    "migrate:deploy": "yarn prisma migrate deploy",
+    "migrate:reset": "yarn prisma migrate reset",
+    "migrate:resolve": "yarn prisma migrate resolve"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
