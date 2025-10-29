@@ -3,9 +3,6 @@ run-name: build_push_deploy_${{ github.ref_name }}
 
 on:
   push:
-    paths-ignore:
-      - 'deployment/helm/**'
-
     branches:
       - main
       - staging
