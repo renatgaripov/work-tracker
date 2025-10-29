@@ -47,6 +47,9 @@ RUN yarn build
 # Этап 3: Финальный образ для запуска
 FROM node:22-alpine3.22 AS runner
 
+ARG NODE_UID=9999
+ARG NODE_GID=9999
+
 WORKDIR /app
 
 # Установка необходимых инструментов для запуска

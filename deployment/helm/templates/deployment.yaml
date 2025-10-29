@@ -47,7 +47,7 @@ spec:
       initContainers:
       - name: set-sqlitedb-dir-permissions
         image: alpine:3
-        command: ["sh","-c","chown -R 1001 /mnt/sqlite_db"]
+        command: ["sh","-c","chown -R 9999 /mnt/sqlite_db"]
         volumeMounts:
         - name: work-tracker-db-pv
           mountPath: /mnt/sqlite_db
