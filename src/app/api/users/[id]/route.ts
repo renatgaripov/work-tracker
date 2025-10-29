@@ -13,7 +13,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ
+        // Проверяем, что сотрудник - админ
         if (session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -21,13 +21,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const resolvedParams = await params;
         const userId = parseInt(resolvedParams.id);
         const body = await request.json();
-        const { login, password, name, position } = body;
+        const { login, password, name, position, role } = body;
 
         if (!name || !position || !login) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Проверяем, что пользователь существует
+        // Проверяем, что сотрудник существует
         const existingUser = await prisma.user.findUnique({
             where: { id: userId },
         });
@@ -36,9 +36,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        // Нельзя редактировать других админов
+        // Нельзя редактировать других админов (кроме изменения собственного профиля)
         if (existingUser.role === 'admin' && userId !== parseInt(session.user.id)) {
             return NextResponse.json({ error: 'Cannot edit other administrators' }, { status: 403 });
+        }
+
+        // Нельзя менять роль другого админа (кроме самого себя)
+        if (
+            role &&
+            role !== existingUser.role &&
+            existingUser.role === 'admin' &&
+            userId !== parseInt(session.user.id)
+        ) {
+            return NextResponse.json({ error: 'Cannot change role of other administrators' }, { status: 403 });
         }
 
         // Проверяем уникальность логина, если он изменился
@@ -57,6 +67,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             name,
             position,
         };
+
+        // Добавляем роль только если она указана
+        if (role && ['admin', 'moderator', 'user'].includes(role)) {
+            updateData.role = role;
+        }
 
         // Добавляем пароль только если он указан
         if (password && password.trim() !== '') {
@@ -91,7 +106,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ
+        // Проверяем, что сотрудник - админ
         if (session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -104,7 +119,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
         }
 
-        // Проверяем, что пользователь существует
+        // Проверяем, что сотрудник существует
         const existingUser = await prisma.user.findUnique({
             where: { id: userId },
         });

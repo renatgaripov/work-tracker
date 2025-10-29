@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const requestedUserId = searchParams.get('userId');
 
-        // Проверяем права доступа: если запрашивается другой пользователь, нужна роль admin или moderator
+        // Проверяем права доступа: если запрашивается другой сотрудник, нужна роль admin или moderator
         if (requestedUserId && parseInt(requestedUserId) !== parseInt(session.user.id)) {
             if (session.user.role !== 'admin' && session.user.role !== 'moderator') {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
         const userId = requestedUserId || session.user.id;
 
-        // Получаем пользователя со ставками
+        // Получаем сотрудника со ставками
         const user = await prisma.user.findUnique({
             where: { id: parseInt(userId) },
             include: { rates: true },

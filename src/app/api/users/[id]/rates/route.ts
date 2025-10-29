@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ
+        // Проверяем, что сотрудник - админ
         if (session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ
+        // Проверяем, что сотрудник - админ
         if (session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: 'Укажите ID ставки' }, { status: 400 });
         }
 
-        // Проверяем, что ставка принадлежит этому пользователю
+        // Проверяем, что ставка принадлежит этому сотруднику
         const existingRate = await prisma.userRate.findUnique({
             where: { id: rateId },
         });
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ
+        // Проверяем, что сотрудник - админ
         if (session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }

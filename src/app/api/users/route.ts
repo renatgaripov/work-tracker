@@ -13,7 +13,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ или модератор
+        // Проверяем, что сотрудник - админ или руководитель
         if (session.user.role !== 'admin' && session.user.role !== 'moderator') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -31,7 +31,7 @@ export async function GET() {
             },
         });
 
-        // Получаем текущую ставку для каждого пользователя
+        // Получаем текущую ставку для каждого сотрудника
         const usersWithRates = users.map((user) => {
             const currentRate = getUserRateForDate(user.rates);
             return {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ
+        // Проверяем, что сотрудник - админ
         if (session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }

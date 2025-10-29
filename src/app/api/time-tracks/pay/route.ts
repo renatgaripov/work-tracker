@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Проверяем, что пользователь - админ
-        if (session.user.role !== 'admin') {
+        // Проверяем, что сотрудник - админ или руководитель
+        if (session.user.role !== 'admin' && session.user.role !== 'moderator') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

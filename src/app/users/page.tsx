@@ -35,6 +35,7 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false)
+  const [isEditRoleDropdownOpen, setIsEditRoleDropdownOpen] = useState(false)
   const [showRateModal, setShowRateModal] = useState(false)
   const [rateUser, setRateUser] = useState<User | null>(null)
   const [editingRate, setEditingRate] = useState<UserRate | null>(null)
@@ -51,7 +52,8 @@ export default function UsersPage() {
     login: '',
     password: '',
     name: '',
-    position: ''
+    position: '',
+    role: 'user'
   })
 
   useEffect(() => {
@@ -103,14 +105,14 @@ export default function UsersPage() {
         setShowCreateForm(false)
         setFormData({ login: '', password: '', name: '', position: '', role: 'user' })
         fetchUsers()
-        success('Пользователь создан успешно')
+        success('Сотрудник создан успешно')
       } else {
         const errorData = await response.json()
         error(`Ошибка: ${errorData.error}`)
       }
     } catch (err) {
       console.error('Error creating user:', err)
-      error('Ошибка при создании пользователя')
+      error('Ошибка при создании сотрудника')
     }
   }
 
@@ -131,21 +133,21 @@ export default function UsersPage() {
       if (response.ok) {
         setShowEditModal(false)
         setEditingUser(null)
-        setEditFormData({ login: '', password: '', name: '', position: '' })
+        setEditFormData({ login: '', password: '', name: '', position: '', role: 'user' })
         fetchUsers()
-        success('Пользователь обновлен успешно')
+        success('Сотрудник обновлен успешно')
       } else {
         const errorData = await response.json()
         error(`Ошибка: ${errorData.error}`)
       }
     } catch (err) {
       console.error('Error updating user:', err)
-      error('Ошибка при обновлении пользователя')
+      error('Ошибка при обновлении сотрудника')
     }
   }
 
   const handleDeleteUser = async (userId: number) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этого пользователя?')) return
+    if (!window.confirm('Вы уверены, что хотите удалить этого сотрудника?')) return
 
     try {
       const response = await fetch(`/api/users/${userId}`, {
@@ -154,14 +156,14 @@ export default function UsersPage() {
 
       if (response.ok) {
         fetchUsers()
-        success('Пользователь удален успешно')
+        success('Сотрудник удален успешно')
       } else {
         const errorData = await response.json()
         error(`Ошибка: ${errorData.error}`)
       }
     } catch (err) {
       console.error('Error deleting user:', err)
-      error('Ошибка при удалении пользователя')
+      error('Ошибка при удалении сотрудника')
     }
   }
 
@@ -171,7 +173,8 @@ export default function UsersPage() {
       login: user.login,
       password: '', // Пароль не показываем, оставляем пустым
       name: user.name,
-      position: user.position
+      position: user.position,
+      role: user.role
     })
     setShowEditModal(true)
   }
@@ -214,7 +217,7 @@ export default function UsersPage() {
   const cancelEdit = () => {
     setShowEditModal(false)
     setEditingUser(null)
-    setEditFormData({ login: '', password: '', name: '', position: '' })
+    setEditFormData({ login: '', password: '', name: '', position: '', role: 'user' })
   }
 
   const handleUpdateRate = async (e: React.FormEvent) => {
@@ -333,14 +336,14 @@ export default function UsersPage() {
 
           <div className="bg-white rounded-lg shadow p-6">
 
-            {/* Форма создания пользователя */}
+            {/* Форма создания сотрудника */}
             {showCreateForm && (
               <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-semibold text-gray-900">
-                        Создать нового пользователя
+                        Создать нового сотрудника
                       </h3>
                       <button
                         onClick={() => setShowCreateForm(false)}
@@ -401,7 +404,7 @@ export default function UsersPage() {
                             >
                               <span className="flex items-center space-x-2">
                                 <User className="w-4 h-4 text-indigo-600" />
-                                <span>{formData.role === 'admin' ? 'Администратор' : formData.role === 'moderator' ? 'Модератор' : 'Пользователь'}</span>
+                                <span>{formData.role === 'admin' ? 'Администратор' : formData.role === 'moderator' ? 'Руководитель' : 'Сотрудник'}</span>
                               </span>
                               <ChevronDown className={`w-4 h-4 text-indigo-600 transition-transform flex-shrink-0 ml-2 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
@@ -424,7 +427,7 @@ export default function UsersPage() {
                                     {formData.role === 'user' && (
                                       <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
                                     )}
-                                    <span>Пользователь</span>
+                                    <span>Сотрудник</span>
                                   </span>
                                 </button>
                                 <button
@@ -443,7 +446,7 @@ export default function UsersPage() {
                                     {formData.role === 'moderator' && (
                                       <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
                                     )}
-                                    <span>Модератор</span>
+                                    <span>Руководитель</span>
                                   </span>
                                 </button>
                                 <button
@@ -531,7 +534,7 @@ export default function UsersPage() {
                             ? 'bg-purple-100 text-purple-800'
                             : 'bg-blue-100 text-blue-800'
                         }`}>
-                          {user.role === 'admin' ? 'Администратор' : user.role === 'moderator' ? 'Модератор' : 'Пользователь'}
+                          {user.role === 'admin' ? 'Администратор' : user.role === 'moderator' ? 'Руководитель' : 'Сотрудник'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -592,7 +595,7 @@ export default function UsersPage() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">
-                  Редактировать пользователя: {editingUser.login}
+                  Редактировать сотрудника: {editingUser.login}
                 </h3>
                 <button
                   onClick={cancelEdit}
@@ -641,6 +644,97 @@ export default function UsersPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 transition-colors"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Роль</label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditRoleDropdownOpen(!isEditRoleDropdownOpen)}
+                      // @ts-expect-error: тадо
+                      disabled={editingUser?.role === 'admin' && editingUser?.id !== parseInt(session?.user?.id || '0')}
+                      // @ts-expect-error: тадо
+                      className={`w-full px-4 py-3 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg text-left font-medium text-gray-900 hover:border-indigo-400 transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center justify-between cursor-pointer ${editingUser?.role === 'admin' && editingUser?.id !== parseInt(session?.user?.id || '0') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <span className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-indigo-600" />
+                        <span>{editFormData.role === 'admin' ? 'Администратор' : editFormData.role === 'moderator' ? 'Руководитель' : 'Сотрудник'}</span>
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-indigo-600 transition-transform flex-shrink-0 ml-2 ${isEditRoleDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* @ts-expect-error: тадо */}
+                    {isEditRoleDropdownOpen && !(editingUser?.role === 'admin' && editingUser?.id !== parseInt(session?.user?.id || '0')) && (
+                      <div className="absolute top-full left-0 mt-2 w-full bg-white border border-indigo-200 rounded-lg shadow-lg z-50">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditFormData({ ...editFormData, role: 'user' })
+                            setIsEditRoleDropdownOpen(false)
+                          }}
+                          className={`w-full px-4 py-3 text-left transition-all hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 font-medium ${
+                            editFormData.role === 'user'
+                              ? 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-900'
+                              : 'text-gray-700 hover:text-indigo-700'
+                          }`}
+                        >
+                          <span className="flex items-center space-x-3">
+                            {editFormData.role === 'user' && (
+                              <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                            )}
+                            <span>Сотрудник</span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditFormData({ ...editFormData, role: 'moderator' })
+                            setIsEditRoleDropdownOpen(false)
+                          }}
+                          className={`w-full px-4 py-3 text-left transition-all hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 font-medium ${
+                            editFormData.role === 'moderator'
+                              ? 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-900'
+                              : 'text-gray-700 hover:text-indigo-700'
+                          }`}
+                        >
+                          <span className="flex items-center space-x-3">
+                            {editFormData.role === 'moderator' && (
+                              <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                            )}
+                            <span>Руководитель</span>
+                          </span>
+                        </button>
+                        {editingUser?.role !== 'admin' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditFormData({ ...editFormData, role: 'admin' })
+                              setIsEditRoleDropdownOpen(false)
+                            }}
+                            className={`w-full px-4 py-3 text-left transition-all hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 font-medium ${
+                              editFormData.role === 'admin'
+                                ? 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-900'
+                                : 'text-gray-700 hover:text-indigo-700'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-3">
+                              {editFormData.role === 'admin' && (
+                                <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                              )}
+                              <span>Администратор</span>
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {/* @ts-expect-error: тадо */}
+                  {editingUser?.role === 'admin' && editingUser?.id !== parseInt(session?.user?.id || '0') && (
+                    <p className="mt-1 text-xs text-gray-500">Нельзя изменить роль другого администратора</p>
+                  )}
+                  {editingUser?.role === 'admin' && (
+                    <p className="mt-1 text-xs text-gray-500">Для администратора можно выбрать только роль Руководителя или Сотрудника</p>
+                  )}
                 </div>
                 <div className="flex space-x-3 pt-6">
                   <button

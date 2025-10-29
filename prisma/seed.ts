@@ -29,11 +29,11 @@ async function createUser(
 
 async function main() {
   try {
-    // Проверяем, есть ли уже пользователи
+    // Проверяем, есть ли уже сотрудники
     const existingUsers = await prisma.user.count();
 
     if (existingUsers > 0) {
-        console.log('Пользователи уже существуют, пропускаем создание');
+        console.log('Сотрудники уже существуют, пропускаем создание');
         await prisma.$disconnect();
         return;
     }
@@ -41,20 +41,20 @@ async function main() {
     // Создаем админа
     await createUser('admin', 'admin', 'Администратор', 'Администратор системы', 'admin');
 
-    // Создаем модератора
-    await createUser('moderator', 'moderator', 'Модератор', 'Модератор системы', 'moderator');
+    // Создаем руководителя
+    await createUser('moderator', 'moderator', 'Руководитель', 'Руководитель системы', 'moderator');
 
     // Создаем разработчика
-    await createUser('user', 'user', 'Пользователь', 'Разработчик', 'user');
+    await createUser('user', 'user', 'Сотрудник', 'Разработчик', 'user');
 
-    console.log('Тестовые пользователи созданы:');
+    console.log('Тестовые сотрудники созданы:');
     console.log('- admin / admin (администратор)');
-    console.log('- moderator / moderator (модератор)');
+    console.log('- moderator / moderator (руководитель)');
     console.log('- user / user (разработчик)');
     
     await prisma.$disconnect();
   } catch (error) {
-    console.error('Ошибка при создании пользователей:', error)
+    console.error('Ошибка при создании сотрудников:', error)
     await prisma.$disconnect();
     process.exit(1)
   }

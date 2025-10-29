@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const userId = searchParams.get('userId');
 
-        // Если указан userId, проверяем права доступа (admin и moderator могут смотреть всех)
+        // Если указан userId, проверяем права доступа (admin и руководитель могут смотреть всех)
         if (
             userId &&
             session.user.role !== 'admin' &&
@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Если userId не указан, используем текущего пользователя
+        // Если userId не указан, используем текущего сотрудника
         const targetUserId = userId ? parseInt(userId) : parseInt(session.user.id);
 
-        // Получаем пользователя со ставками
+        // Получаем сотрудника со ставками
         const user = await prisma.user.findUnique({
             where: { id: targetUserId },
             include: { rates: true },
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
                 },
             });
 
-            // Группируем данные (теперь только один пользователь)
+            // Группируем данные (теперь только один сотрудник)
             const users: {
                 [userId: string]: {
                     name: string;

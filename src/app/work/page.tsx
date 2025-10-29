@@ -462,7 +462,7 @@ export default function StatisticsPage() {
 
                 {/* Кнопка оплаты для админа */}
                 {/* @ts-expect-error: тадо */}
-                {session.user.role === 'admin' && (
+                {(session.user.role === 'admin' || session.user.role === 'moderator') && (
                   <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-600 mb-2">
                       Выбрано для оплаты: {selectedTracks.length}

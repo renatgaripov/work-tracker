@@ -34,4 +34,3 @@ export async function findUserByLogin(login: string) {
         where: { login },
     });
 }
-
