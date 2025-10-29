@@ -50,6 +50,9 @@ FROM node:22-alpine3.22 AS runner
 ARG NODE_UID=9999
 ARG NODE_GID=9999
 
+ENV NODE_UID=9999
+ENV NODE_GID=9999
+
 WORKDIR /app
 
 # Установка необходимых инструментов для запуска
