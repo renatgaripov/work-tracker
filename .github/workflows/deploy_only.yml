@@ -1,0 +1,35 @@
+name: build_push_deploy
+run-name: build_push_deploy_${{ github.ref_name }}
+
+on:
+  push:
+    paths:
+      - 'deployment/helm/**'
+    branches:
+      - main
+      - staging
+
+jobs:
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Create kube config
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+      - name: Install helm
+        run: |
+          curl -LO https://get.helm.sh/helm-v3.8.0-linux-amd64.tar.gz
+          tar -zxvf helm-v3.8.0-linux-amd64.tar.gz
+          mv linux-amd64/helm /usr/local/bin/helm
+          helm version
+      - name: Lint helm chart
+        run: helm lint ./deployment/helm -f ./deployment/helm/${{ github.ref_name }}.yaml
+      - name: Deploy
+        run: |
+          if [ ${{ github.ref_name }} != "main" ]; then export DEPLOY_BRANCH_NAME="-${{ github.ref_name }}"; else export DEPLOY_BRANCH_NAME=""; fi
+          helm upgrade --install --atomic --timeout 3m work-tracker ./deployment/helm --debug --set image.tag=sha-${GITHUB_SHA} --namespace work-tracker$DEPLOY_BRANCH_NAME --create-namespace -f ./deployment/helm/${{ github.ref_name }}.yaml
