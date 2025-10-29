@@ -50,7 +50,7 @@ spec:
         command:
         - chown -R 1001 /mnt/sqlite_db
         volumeMounts:
-        - name: data
+        - name: work-tracker-db-pv
           mountPath: /mnt/sqlite_db
 
       volumes:
