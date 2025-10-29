@@ -39,7 +39,13 @@ export default function Navigation() {
       href: '/users',
       icon: Users,
       current: pathname === '/users'
-    }] : [])
+    }] : []),
+    {
+      name: 'FAQ',
+      href: '/faq',
+      icon: TrendingUp,
+      current: pathname === '/faq'
+    },
   ]
 
   return (

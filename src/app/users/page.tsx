@@ -645,6 +645,7 @@ export default function UsersPage() {
                     required
                   />
                 </div>
+                {editingUser?.role !== 'admin' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Роль</label>
                   <div className="relative">
@@ -728,14 +729,8 @@ export default function UsersPage() {
                       </div>
                     )}
                   </div>
-                  {/* @ts-expect-error: тадо */}
-                  {editingUser?.role === 'admin' && editingUser?.id !== parseInt(session?.user?.id || '0') && (
-                    <p className="mt-1 text-xs text-gray-500">Нельзя изменить роль другого администратора</p>
-                  )}
-                  {editingUser?.role === 'admin' && (
-                    <p className="mt-1 text-xs text-gray-500">Для администратора можно выбрать только роль Руководителя или Сотрудника</p>
-                  )}
                 </div>
+                )}
                 <div className="flex space-x-3 pt-6">
                   <button
                     type="submit"

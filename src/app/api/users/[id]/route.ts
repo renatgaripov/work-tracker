@@ -41,14 +41,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: 'Cannot edit other administrators' }, { status: 403 });
         }
 
-        // Нельзя менять роль другого админа (кроме самого себя)
-        if (
-            role &&
-            role !== existingUser.role &&
-            existingUser.role === 'admin' &&
-            userId !== parseInt(session.user.id)
-        ) {
-            return NextResponse.json({ error: 'Cannot change role of other administrators' }, { status: 403 });
+        // Нельзя менять роль администратора вообще (админ навсегда)
+        if (role && role !== existingUser.role && existingUser.role === 'admin') {
+            return NextResponse.json({ error: 'Cannot change administrator role' }, { status: 403 });
         }
 
         // Проверяем уникальность логина, если он изменился
