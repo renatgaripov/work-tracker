@@ -44,6 +44,15 @@ spec:
             - mountPath: /mnt/sqlite_db
               name: work-tracker-db-pv
 
+      initContainers:
+      - name: set-sqlitedb-dir-permissions
+        image: alpine:3
+        command:
+        - chown -R 1111:1111 /mnt/sqlite_db
+        volumeMounts:
+        - name: data
+          mountPath: /mnt/sqlite_db
+          
       volumes:
         - name: work-tracker-db-pv
           persistentVolumeClaim:
