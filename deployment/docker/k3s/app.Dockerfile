@@ -65,7 +65,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 # Переключаемся на непривилегированного пользователя
-RUN groupadd -g 1111 nextjs && useradd --uid 1111 nextjs --gid 1111
+RUN addgroup --gid 1111 nextjs && useradd --uid 1111 nextjs --gid 1111
 USER nextjs
 
 EXPOSE 3003
