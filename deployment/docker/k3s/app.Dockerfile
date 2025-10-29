@@ -3,6 +3,8 @@
 # Этап 1: Установка зависимостей
 FROM node:22-alpine3.22 AS deps
 
+RUN adduser --uid 9999 app -G nodejs
+
 # Установка необходимых инструментов для сборки нативных модулей
 RUN apk add --no-cache make gcc g++ python3 libstdc++
 
@@ -65,7 +67,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 # Переключаемся на непривилегированного пользователя
-RUN useradd --uid 9999 app -G nodejs
+RUN adduser --uid 9999 app -G nodejs
 USER app
 
 EXPOSE 3003
