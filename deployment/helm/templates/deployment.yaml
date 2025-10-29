@@ -48,7 +48,9 @@ spec:
       - name: set-sqlitedb-dir-permissions
         image: alpine:3
         command:
-        - sleep 100000
+          - /bin/bash
+          - -c
+          - ls -la /
         volumeMounts:
         - name: work-tracker-db-pv
           mountPath: /mnt/sqlite_db
