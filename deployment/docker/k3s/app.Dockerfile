@@ -47,12 +47,6 @@ RUN yarn build
 # Этап 3: Финальный образ для запуска
 FROM node:22-alpine3.22 AS runner
 
-ARG NODE_UID=9999
-ARG NODE_GID=9999
-
-ENV NODE_UID=9999
-ENV NODE_GID=9999
-
 WORKDIR /app
 
 # Установка необходимых инструментов для запуска
@@ -71,7 +65,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 # Переключаемся на непривилегированного пользователя
-USER nextjs
+RUN useradd --uid 9999 app
+USER app
 
 EXPOSE 3003
 
