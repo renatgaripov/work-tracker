@@ -65,7 +65,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 # Переключаемся на непривилегированного пользователя
-RUN useradd --uid 9999 app
+RUN useradd --uid 9999 app -G nodejs
 USER app
 
 EXPOSE 3003
