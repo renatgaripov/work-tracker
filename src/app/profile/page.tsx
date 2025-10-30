@@ -130,6 +130,7 @@ function ProfileContent() {
   }
 
   const currentRate = getRateForDate(rates, new Date()) || 0
+  const paidEarnings = totalEarnings - unpaidEarnings
 
   // Стаж
   const firstTrackDate = tracks.length ? new Date(Math.min(...tracks.map(t => new Date(t.date).getTime()))) : null
@@ -245,7 +246,7 @@ function ProfileContent() {
         {/* Финансы - полосатые карточки */}
         <div className="border-t pt-4">
           <h3 className="text-lg font-medium text-gray-900 mb-3">Финансовая информация</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border rounded-lg overflow-hidden">
             <div className="p-4 bg-gray-50 flex items-center">
               <CalendarClock className="w-5 h-5 text-emerald-600 mr-2" />
               <div>
@@ -254,6 +255,13 @@ function ProfileContent() {
               </div>
             </div>
             <div className="p-4 bg-white flex items-center">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Оплачено</div>
+                <div className="text-gray-900 font-medium">{formatMoney(paidEarnings)}</div>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 flex items-center">
               <CircleDollarSign className="w-5 h-5 text-red-600 mr-2" />
               <div>
                 <div className="text-xs text-gray-500">Ожидает оплаты</div>
