@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { User as UserIcon, DollarSign, Clock3, CalendarClock, History, CircleDollarSign, ClipboardList, CheckCircle2, XCircle } from 'lucide-react'
 
 type Rate = { id: number; rate: number; valid_from: string }
@@ -24,9 +24,10 @@ function getRateForDate(rates: Rate[], date: Date): number | null {
   return target.length > 0 ? target[0].rate : null
 }
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [userInfo, setUserInfo] = useState<{
     id: number
@@ -46,25 +47,42 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    // доступно только для сотрудников
     if (!session) {
       router.push('/login')
       return
     }
-    const userWithRole = session.user as unknown as { role: string }
-    if (userWithRole.role !== 'user') {
-      router.push('/dashboard')
-      return
-    }
+    const userWithRole = session.user as unknown as { role: string; id?: string }
 
     const load = async () => {
       try {
-        const meRes = await fetch('/api/users/me')
-        if (!meRes.ok) throw new Error('me failed')
-        const me = await meRes.json()
-        setUserInfo(me)
+        // Если обычный сотрудник — показываем его кабинет
+        if (userWithRole.role === 'user') {
+          const meRes = await fetch('/api/users/me')
+          if (!meRes.ok) throw new Error('me failed')
+          const me = await meRes.json()
+          setUserInfo(me)
 
-        const ttRes = await fetch(`/api/time-tracks?userId=${me.id}`)
+          const ttRes = await fetch(`/api/time-tracks?userId=${me.id}`)
+          if (!ttRes.ok) throw new Error('tracks failed')
+          const tts = await ttRes.json()
+          setTracks(tts)
+          return
+        }
+
+        // Если админ/руководитель — требуется userId в query
+        const userIdParam = searchParams.get('userId')
+        if (!userIdParam) {
+          router.push('/users')
+          return
+        }
+        const userId = parseInt(userIdParam, 10)
+
+        const userRes = await fetch(`/api/users/${userId}`)
+        if (!userRes.ok) throw new Error('user failed')
+        const user = await userRes.json()
+        setUserInfo(user)
+
+        const ttRes = await fetch(`/api/time-tracks?userId=${userId}`)
         if (!ttRes.ok) throw new Error('tracks failed')
         const tts = await ttRes.json()
         setTracks(tts)
@@ -75,7 +93,7 @@ export default function ProfilePage() {
       }
     }
     load()
-  }, [session, status, router])
+  }, [session, status, router, searchParams])
 
   if (loading || !userInfo) {
     return (
@@ -276,5 +294,24 @@ export default function ProfilePage() {
         </div>
       </form>
     </div>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow">
+          <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mb-6" />
+          <div className="space-y-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className={`h-12 ${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'} animate-pulse rounded`} />
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <ProfileContent />
+    </Suspense>
   )
 }

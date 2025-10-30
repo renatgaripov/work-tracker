@@ -9,6 +9,9 @@ export default function Navigation() {
   const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
+  // Безопасные поля из session.user с учетом расширения типов
+  const userRole = (session?.user as unknown as { role?: string })?.role
+  const userName = session?.user?.name
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/login' })
@@ -33,8 +36,7 @@ export default function Navigation() {
       icon: TrendingUp,
       current: pathname === '/analytics'
     },
-    // @ts-expect-error: тадо
-    ...(session?.user?.role === 'admin' || session?.user?.role === 'moderator' ? [{
+    ...(userRole === 'admin' || userRole === 'moderator' ? [{
       name: 'Штат',
       href: '/users',
       icon: Users,
@@ -81,16 +83,27 @@ export default function Navigation() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.push('/profile')}
-              className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              <User className="w-5 h-5 text-gray-500" />
-              <div className="text-left">
-                <p className="text-sm font-medium text-gray-900">{session?.user.name}</p>
-                <p className="text-xs text-gray-500">{session?.user.role === 'admin' ? 'Администратор' : session?.user.role === 'moderator' ? 'Руководитель' : 'Сотрудник'}</p>
+            {/* Профиль доступен ссылкой только для сотрудников */}
+            {userRole === 'user' ? (
+              <button
+                onClick={() => router.push('/profile')}
+                className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <User className="w-5 h-5 text-gray-500" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-gray-900">{userName}</p>
+                  <p className="text-xs text-gray-500">Сотрудник</p>
+                </div>
+              </button>
+            ) : (
+              <div className="flex items-center space-x-2 px-2 py-1 rounded select-none">
+                <User className="w-5 h-5 text-gray-500" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-gray-900">{userName}</p>
+                  <p className="text-xs text-gray-500">{userRole === 'admin' ? 'Администратор' : userRole === 'moderator' ? 'Руководитель' : 'Сотрудник'}</p>
+                </div>
               </div>
-            </button>
+            )}
             
             <button
               onClick={() => router.push('/change-password')}

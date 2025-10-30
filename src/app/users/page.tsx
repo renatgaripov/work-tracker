@@ -515,7 +515,7 @@ export default function UsersPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Создан</th>
                     {/* @ts-expect-error: тадо */}
-                    {session.user.role === 'admin' && (
+                    {(session.user.role === 'admin' || session.user.role === 'moderator') && (
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
                     )}
                   </tr>
@@ -548,42 +548,65 @@ export default function UsersPage() {
                         {new Date(user.created_at).toLocaleDateString('ru-RU')}
                       </td>
                       {/* @ts-expect-error: тадо */}
-                      {session.user.role === 'admin' && (
+                      {(session.user.role === 'admin' || session.user.role === 'moderator') && (
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 text-right">
-                          {/* @ts-expect-error: тадо */}
-                          {user.role === 'admin' && user.id !== parseInt(session?.user?.id || '0') ? (
-                            <span className="text-gray-400 text-sm">Недоступно</span>
-                          ) : (
-                            <div className="flex space-x-2 justify-end">
+                          <div className="flex space-x-2 justify-end">
+                            {/* Переход в кабинет сотрудника — для админов/рук, но не для строк с ролями admin/moderator */}
+                            {user.role === 'admin' || user.role === 'moderator' ? (
+                              <div className="p-1 text-gray-300">
+                                <User className="w-4 h-4" />
+                              </div>
+                            ) : (
                               <button
-                                onClick={() => startRateEdit(user)}
-                                className="p-1 text-green-600 hover:text-green-900 hover:bg-green-50 rounded transition-colors cursor-pointer"
-                                title="Изменить ставку"
+                                onClick={() => router.push(`/profile?userId=${user.id}`)}
+                                className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded transition-colors cursor-pointer"
+                                title="Открыть кабинет"
                               >
-                                <DollarSign className="w-4 h-4" />
+                                <User className="w-4 h-4" />
                               </button>
-                              <button
-                                onClick={() => startEdit(user)}
-                                className="p-1 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded transition-colors cursor-pointer"
-                                title="Редактировать"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              {user.role !== 'admin' ? (
-                                <button
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors cursor-pointer"
-                                  title="Удалить"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              ) : (
-                                <div className="p-1 text-gray-300 cursor-not-allowed" title="Удаление недоступно">
-                                  <Trash2 className="w-4 h-4" />
-                                </div>
-                              )}
-                            </div>
-                          )}
+                            )}
+
+                            {/* Остальные действия — только для админа */}
+                            {/* @ts-expect-error: тадо */}
+                            {session.user.role === 'admin' && (
+                              <>
+                                {/* @ts-expect-error: тадо */}
+                                {user.role === 'admin' && user.id !== parseInt(session?.user?.id || '0') ? (
+                                  <span className="text-gray-400 text-sm">Недоступно</span>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => startRateEdit(user)}
+                                      className="p-1 text-green-600 hover:text-green-900 hover:bg-green-50 rounded transition-colors cursor-pointer"
+                                      title="Изменить ставку"
+                                    >
+                                      <DollarSign className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => startEdit(user)}
+                                      className="p-1 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded transition-colors cursor-pointer"
+                                      title="Редактировать"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    {user.role !== 'admin' ? (
+                                      <button
+                                        onClick={() => handleDeleteUser(user.id)}
+                                        className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                                        title="Удалить"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    ) : (
+                                      <div className="p-1 text-gray-300 cursor-not-allowed" title="Удаление недоступно">
+                                        <Trash2 className="w-4 h-4" />
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </td>
                       )}
                     </tr>

@@ -5,6 +5,53 @@ import { authOptions } from '@/lib/auth-config';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const resolvedParams = await params;
+        const userId = parseInt(resolvedParams.id);
+
+        // Разрешаем: админ и руководитель могут смотреть любого, сотрудник — только себя
+        const isAdmin = session.user.role === 'admin';
+        const isModerator = session.user.role === 'moderator';
+        const isSelf = parseInt(session.user.id) === userId;
+        if (!(isAdmin || isModerator || isSelf)) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                rates: { orderBy: { valid_from: 'desc' } },
+                _count: { select: { time_tracks: true } },
+            },
+        });
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            id: user.id,
+            login: user.login,
+            name: user.name,
+            position: user.position,
+            role: user.role,
+            created_at: user.created_at,
+            rates: user.rates,
+            timeTracksCount: user._count.time_tracks,
+        });
+    } catch (error) {
+        console.error('Error fetching user by id:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const session = await getServerSession(authOptions);
