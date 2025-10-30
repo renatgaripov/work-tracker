@@ -76,7 +76,14 @@ export default function UsersPage() {
       const data = await response.json()
       
       if (response.ok) {
-        setUsers(data)
+        const roleOrder: Record<string, number> = { admin: 0, moderator: 1, user: 2 }
+        const sorted = (data as User[]).slice().sort((a, b) => {
+          const ra = roleOrder[a.role] ?? 99
+          const rb = roleOrder[b.role] ?? 99
+          if (ra !== rb) return ra - rb
+          return a.name.localeCompare(b.name, 'ru')
+        })
+        setUsers(sorted)
       } else {
         error(`Ошибка: ${data.error}`)
       }

@@ -41,18 +41,20 @@ export async function GET(request: NextRequest) {
             const monthEnd = endOfMonth(monthDate);
 
             // Получаем записи времени за месяц
+            const monthEndPlusOne = new Date(monthEnd);
+            monthEndPlusOne.setDate(monthEndPlusOne.getDate() + 1);
+
             const timeTracks = await prisma.timeTrack.findMany({
                 where: {
                     user_id: parseInt(userId),
                     date: {
                         gte: monthStart,
-                        lt: monthEnd,
+                        lt: monthEndPlusOne,
                     },
                 },
             });
 
             // Рассчитываем заработок
-            // @ts-expect-error: так надо
             const totalMinutes = timeTracks.reduce((sum, track) => sum + track.time, 0);
             const totalHours = totalMinutes / 60;
 
@@ -62,7 +64,6 @@ export async function GET(request: NextRequest) {
                 const trackRate = getUserRateForDate(user?.rates || [], new Date(track.date)) ?? 0;
                 earnings += (track.time / 60) * trackRate;
             }
-
             monthlyData.push({
                 month: format(monthDate, 'yyyy-MM'),
                 earnings: Math.round(earnings),

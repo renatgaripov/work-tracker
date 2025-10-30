@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const userId = searchParams.get('userId');
 
-        // Если указан userId, проверяем права доступа (admin и руководитель могут смотреть всех)
+        // Проверка прав при явном запросе конкретного пользователя
         if (
             userId &&
             session.user.role !== 'admin' &&
@@ -26,14 +26,28 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Если userId не указан, используем текущего сотрудника
-        const targetUserId = userId ? parseInt(userId) : parseInt(session.user.id);
+        // Определяем целевые пользователи
+        let targetUserIds: number[] = [];
+        if (userId) {
+            targetUserIds = [parseInt(userId)];
+        } else if (session.user.role === 'admin' || session.user.role === 'moderator') {
+            // По умолчанию для админа/руководителя — все сотрудники (role = 'user')
+            const employees = await prisma.user.findMany({
+                where: { role: 'user' },
+                select: { id: true },
+            });
+            targetUserIds = employees.map((u) => u.id);
+        } else {
+            targetUserIds = [parseInt(session.user.id)];
+        }
 
-        // Получаем сотрудника со ставками
-        const user = await prisma.user.findUnique({
-            where: { id: targetUserId },
+        // Карта ставок по пользователям (для корректного вычисления ставок на дату записи)
+        const usersWithRates = await prisma.user.findMany({
+            where: { id: { in: targetUserIds } },
             include: { rates: true },
         });
+        const userIdToRates = new Map<number, (typeof usersWithRates)[number]['rates']>();
+        usersWithRates.forEach((u) => userIdToRates.set(u.id, u.rates));
 
         // Получаем данные за последние 12 месяцев
         const now = new Date();
@@ -47,10 +61,10 @@ export async function GET(request: NextRequest) {
             const monthEnd = endOfMonth(month);
             const monthKey = format(month, 'yyyy-MM');
 
-            // Получаем все треки за месяц
+            // Получаем все треки за месяц по целевым пользователям
             const timeTracks = await prisma.timeTrack.findMany({
                 where: {
-                    user_id: targetUserId,
+                    user_id: { in: targetUserIds },
                     date: {
                         gte: monthStart,
                         lt: monthEnd,
@@ -59,17 +73,16 @@ export async function GET(request: NextRequest) {
                 include: {
                     user: {
                         select: {
+                            id: true,
                             name: true,
                             position: true,
                         },
                     },
                 },
-                orderBy: {
-                    date: 'desc',
-                },
+                orderBy: { date: 'desc' },
             });
 
-            // Группируем данные (теперь только один сотрудник)
+            // Группируем данные по пользователям
             const users: {
                 [userId: string]: {
                     name: string;
@@ -93,54 +106,50 @@ export async function GET(request: NextRequest) {
             let paidEarnings = 0;
             let unpaidEarnings = 0;
 
-            if (timeTracks.length > 0) {
-                const firstTrack = timeTracks[0];
-                const userId = firstTrack.user_id.toString();
-                const rate = getUserRateForDate(user?.rates || []) ?? 0;
+            timeTracks.forEach((track) => {
+                const uid = track.user_id.toString();
+                if (!users[uid]) {
+                    const baseRate = getUserRateForDate(userIdToRates.get(track.user_id) || []) ?? 0;
+                    users[uid] = {
+                        name: track.user.name,
+                        position: track.user.position,
+                        totalMinutes: 0,
+                        paidMinutes: 0,
+                        unpaidMinutes: 0,
+                        totalEarnings: 0,
+                        paidEarnings: 0,
+                        unpaidEarnings: 0,
+                        rate: baseRate,
+                        tracks: [],
+                    };
+                }
 
-                users[userId] = {
-                    name: firstTrack.user.name,
-                    position: firstTrack.user.position,
-                    totalMinutes: 0,
-                    paidMinutes: 0,
-                    unpaidMinutes: 0,
-                    totalEarnings: 0,
-                    paidEarnings: 0,
-                    unpaidEarnings: 0,
-                    rate: rate,
-                    tracks: [],
-                };
+                const trackRate = getUserRateForDate(userIdToRates.get(track.user_id) || [], new Date(track.date)) ?? 0;
+                const trackEarnings = trackRate > 0 ? (track.time / 60) * trackRate : 0;
 
-                timeTracks.forEach((track) => {
-                    // Получаем ставку именно на дату этой записи
-                    const trackRate = getUserRateForDate(user?.rates || [], new Date(track.date)) ?? 0;
-                    const trackEarnings = trackRate > 0 ? (track.time / 60) * trackRate : 0;
+                const trackWithRate = track as typeof track & { rate: number };
+                trackWithRate.rate = trackRate;
 
-                    // Добавляем ставку к треку для использования на фронтенде, избегая any
-                    const trackWithRate = track as typeof track & { rate: number };
-                    trackWithRate.rate = trackRate;
+                users[uid].totalMinutes += track.time;
+                users[uid].totalEarnings += trackEarnings;
+                users[uid].tracks.push(trackWithRate);
 
-                    users[userId].totalMinutes += track.time;
-                    users[userId].totalEarnings += trackEarnings;
-                    users[userId].tracks.push(trackWithRate);
+                if (track.was_paid) {
+                    users[uid].paidMinutes += track.time;
+                    users[uid].paidEarnings += trackEarnings;
+                    paidMinutes += track.time;
+                    paidEarnings += trackEarnings;
+                    paidTracks++;
+                } else {
+                    users[uid].unpaidMinutes += track.time;
+                    users[uid].unpaidEarnings += trackEarnings;
+                    unpaidMinutes += track.time;
+                    unpaidEarnings += trackEarnings;
+                }
 
-                    if (track.was_paid) {
-                        users[userId].paidMinutes += track.time;
-                        users[userId].paidEarnings += trackEarnings;
-                        paidMinutes += track.time;
-                        paidEarnings += trackEarnings;
-                        paidTracks++;
-                    } else {
-                        users[userId].unpaidMinutes += track.time;
-                        users[userId].unpaidEarnings += trackEarnings;
-                        unpaidMinutes += track.time;
-                        unpaidEarnings += trackEarnings;
-                    }
-
-                    totalMinutes += track.time;
-                    totalEarnings += trackEarnings;
-                });
-            }
+                totalMinutes += track.time;
+                totalEarnings += trackEarnings;
+            });
 
             monthlyStats.push({
                 month: monthKey,

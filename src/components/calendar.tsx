@@ -26,6 +26,11 @@ interface TimeTrack {
   time: number
   comment: string
   was_paid: boolean
+  user?: {
+    id: number
+    name: string
+    position: string
+  }
 }
 
 interface CalendarProps {
@@ -36,9 +41,10 @@ interface CalendarProps {
   onMonthChange?: (month: Date) => void
   currentUserId?: number | null
   onGoToToday?: () => void
+  isAllStaffMode?: boolean
 }
 
-export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, onMonthChange, currentUserId, onGoToToday }: CalendarProps) {
+export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, onMonthChange, currentUserId, onGoToToday, isAllStaffMode }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(currentMonth || new Date())
   const [timeTracks, setTimeTracks] = useState<TimeTrack[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,7 +64,7 @@ export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, 
   useEffect(() => {
     fetchTimeTracks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate, userId])
+  }, [currentDate, userId, isAllStaffMode])
 
   // Синхронизируем с внешним состоянием месяца
   useEffect(() => {
@@ -74,8 +80,10 @@ export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, 
       const endDate = format(monthEnd, 'yyyy-MM-dd')
       
       let url = `/api/time-tracks?startDate=${startDate}&endDate=${endDate}`
-      if (userId) {
+      if (userId && !isAllStaffMode) {
         url += `&userId=${userId}`
+      } else if (isAllStaffMode) {
+        url += `&userId=null`
       }
       
       const response = await fetch(url)
@@ -89,12 +97,37 @@ export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, 
   }
 
   const getTimeForDate = (date: Date) => {
+    let filteredTracks = timeTracks.filter(track => {
+      const trackDate = new Date(track.date)
+      return isSameDay(trackDate, date)
+    })
+    
+    // Если не режим "Весь штат", фильтруем только треки текущего пользователя
+    if (!isAllStaffMode && userId) {
+      filteredTracks = filteredTracks.filter(track => track.user?.id === userId)
+    }
+    
+    return filteredTracks.reduce((total, track) => total + track.time, 0)
+  }
+
+  const getTimeTracksForDate = (date: Date) => {
     return timeTracks
       .filter(track => {
         const trackDate = new Date(track.date)
         return isSameDay(trackDate, date)
       })
-      .reduce((total, track) => total + track.time, 0)
+      .map(track => ({
+        id: track.id,
+        name: track.user?.name || 'Неизвестно',
+        time: track.time
+      }))
+      .reduce((acc: {[key: string]: number}, item) => {
+        if (!acc[item.name]) {
+          acc[item.name] = 0
+        }
+        acc[item.name] += item.time
+        return acc
+      }, {})
   }
 
   const formatTime = (minutes: number) => {
@@ -186,31 +219,51 @@ export default function Calendar({ onDayClick, onAddTime, userId, currentMonth, 
           const timeForDay = getTimeForDate(day)
           const isToday = isSameDay(day, new Date())
           const isCurrentMonth = isSameMonth(day, currentDate)
+          const staffTimes = isAllStaffMode ? getTimeTracksForDate(day) : {}
           
           return (
             <div
               key={day.toISOString()}
               className={`
-                group h-20 border rounded-lg p-2 cursor-pointer transition-all hover:shadow-md
+                group border rounded-lg p-2 cursor-pointer transition-all hover:shadow-md
                 ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
                 ${isToday ? 'ring-2 ring-indigo-500' : ''}
                 ${timeForDay > 0 ? 'border-green-300 bg-green-50' : 'border-gray-200'}
+                ${isAllStaffMode ? 'min-h-24' : 'h-20'}
               `}
               onClick={() => onDayClick(day)}
             >
               <div className="flex justify-between items-start h-full">
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className={`text-sm font-medium ${isCurrentMonth ? 'text-gray-900' : 'text-gray-500'}`}>
                     {format(day, 'd')}
                   </div>
-                  {timeForDay > 0 && (
-                    <div className="text-xs text-green-600 mt-1">
-                      {formatTime(timeForDay)}
+                  {isAllStaffMode ? (
+                    <div className="mt-1 space-y-0.5">
+                      {Object.keys(staffTimes).length > 0 ? (
+                        Object.entries(staffTimes).map(([name, time]) => (
+                          <div key={name} className="text-xs text-green-600 truncate">
+                            {name}: {formatTime(time)}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-gray-400">Нет записей</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-1">
+                      {timeForDay > 0 ? (
+                        <div className="text-xs text-green-600">
+                          {formatTime(timeForDay)}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-400">Нет записей</div>
+                      )}
                     </div>
                   )}
                 </div>
                 {/* Показываем кнопку добавления времени только для собственного календаря */}
-                {currentUserId && userId === currentUserId && (
+                {currentUserId && userId === currentUserId && !isAllStaffMode && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation()

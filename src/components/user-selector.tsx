@@ -8,15 +8,18 @@ interface User {
   name: string
   position: string
   login: string
+  role?: string
 }
 
 interface UserSelectorProps {
   onUserChange: (userId: number | null) => void
   selectedUserId: number | null
   currentUserId: number
+  isAllStaffMode?: boolean
+  onAllStaffModeChange?: (enabled: boolean) => void
 }
 
-export default function UserSelector({ onUserChange, selectedUserId, currentUserId }: UserSelectorProps) {
+export default function UserSelector({ onUserChange, selectedUserId, currentUserId, isAllStaffMode, onAllStaffModeChange }: UserSelectorProps) {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -45,7 +48,9 @@ export default function UserSelector({ onUserChange, selectedUserId, currentUser
       const response = await fetch('/api/users')
       if (response.ok) {
         const data = await response.json()
-        setUsers(data)
+        // показываем только сотрудников
+        const employees = (data as User[]).filter(u => (u.role ?? 'user') === 'user')
+        setUsers(employees)
       } else {
         console.error('Error fetching users')
       }
@@ -56,14 +61,14 @@ export default function UserSelector({ onUserChange, selectedUserId, currentUser
     }
   }
 
-  const currentUser = users.find(user => user.id === currentUserId)
-  const selectedUser = users.find(user => user.id === (selectedUserId || currentUserId))
+  const selectedUser = users.find(user => user.id === (selectedUserId || undefined))
   
-  const displayName = selectedUser
-    ? (selectedUserId === currentUserId || !selectedUserId
-        ? `Моя работа (${currentUser?.name || 'Вы'})`
-        : `${selectedUser.name} (${selectedUser.position})`)
-    : 'Загрузка...'
+  let displayName = 'Загрузка...'
+  if (isAllStaffMode) {
+    displayName = 'Весь штат'
+  } else if (selectedUser) {
+    displayName = `${selectedUser.name} (${selectedUser.position})`
+  }
 
   if (loading) {
     return (
@@ -73,8 +78,8 @@ export default function UserSelector({ onUserChange, selectedUserId, currentUser
     )
   }
 
-  const allUsers: (User & { isMine?: boolean })[] = [
-    { id: currentUserId, name: 'Моя работа', position: '', login: '', isMine: true },
+  const allUsers: (User & { isAllStaff?: boolean })[] = [
+    { id: -1, name: 'Весь штат', position: '', login: '', isAllStaff: true },
     ...users.filter(user => user.id !== currentUserId)
   ]
 
@@ -94,32 +99,48 @@ export default function UserSelector({ onUserChange, selectedUserId, currentUser
 
       {isDropdownOpen && (
         <div className="absolute top-full right-0 mt-2 min-w-80 bg-white border border-indigo-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-          {allUsers.map((user) => (
-            <button
-              key={user.id}
-              type="button"
-              onClick={() => {
-                onUserChange(user.id === currentUserId ? currentUserId : user.id)
-                setIsDropdownOpen(false)
-              }}
-              className={`w-full px-4 py-3 text-left transition-all hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 font-medium ${
-                (selectedUserId || currentUserId) === user.id
-                  ? 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-900'
-                  : 'text-gray-700 hover:text-indigo-700'
-              }`}
-            >
-              <span className="flex items-center space-x-3">
-                {(selectedUserId || currentUserId) === user.id && (
-                  <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
-                )}
-                <span>
-                  {'isMine' in user && user.isMine 
-                    ? `Моя работа (${currentUser?.name || 'Вы'})` 
-                    : `${user.name} (${user.position})`}
+          {allUsers.map((user) => {
+            const isSelected = 'isAllStaff' in user && user.isAllStaff 
+              ? isAllStaffMode 
+              : (selectedUserId || currentUserId) === user.id
+              
+            return (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => {
+                  if ('isAllStaff' in user && user.isAllStaff) {
+                    if (onAllStaffModeChange) {
+                      onAllStaffModeChange(true)
+                    }
+                    onUserChange(null)
+                  } else {
+                    if (onAllStaffModeChange) {
+                      onAllStaffModeChange(false)
+                    }
+                    onUserChange(user.id === currentUserId ? currentUserId : user.id)
+                  }
+                  setIsDropdownOpen(false)
+                }}
+                className={`w-full px-4 py-3 text-left transition-all hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 font-medium ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-900'
+                    : 'text-gray-700 hover:text-indigo-700'
+                }`}
+              >
+                <span className="flex items-center space-x-3">
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                  )}
+                  <span>
+                    {'isAllStaff' in user && user.isAllStaff
+                      ? 'Весь штат'
+                      : `${user.name} (${user.position})`}
+                  </span>
                 </span>
-              </span>
-            </button>
-          ))}
+              </button>
+            )
+          })}
         </div>
       )}
     </div>

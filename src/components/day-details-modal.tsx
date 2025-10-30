@@ -13,6 +13,11 @@ interface TimeTrack {
   comment: string
   was_paid: boolean
   created_at: string
+  user?: {
+    id: number
+    name: string
+    position: string
+  }
 }
 
 interface DayDetailsModalProps {
@@ -22,9 +27,10 @@ interface DayDetailsModalProps {
   onTimeUpdated?: () => void
   userId?: number | null
   currentUserId?: number | null
+  isAllStaffMode?: boolean
 }
 
-export default function DayDetailsModal({ isOpen, onClose, date, onTimeUpdated, userId, currentUserId }: DayDetailsModalProps) {
+export default function DayDetailsModal({ isOpen, onClose, date, onTimeUpdated, userId, currentUserId, isAllStaffMode }: DayDetailsModalProps) {
   const [timeTracks, setTimeTracks] = useState<TimeTrack[]>([])
   const [loading, setLoading] = useState(true)
   const [editingTrack, setEditingTrack] = useState<number | null>(null)
@@ -39,14 +45,16 @@ export default function DayDetailsModal({ isOpen, onClose, date, onTimeUpdated, 
       fetchDayDetails()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, date, userId])
+  }, [isOpen, date, userId, isAllStaffMode])
 
   const fetchDayDetails = async () => {
     try {
       const dateStr = format(date, 'yyyy-MM-dd')
       let url = `/api/time-tracks?date=${dateStr}`
-      if (userId) {
+      if (userId && !isAllStaffMode) {
         url += `&userId=${userId}`
+      } else if (isAllStaffMode) {
+        url += `&userId=null`
       }
       
       const response = await fetch(url)
@@ -291,6 +299,18 @@ export default function DayDetailsModal({ isOpen, onClose, date, onTimeUpdated, 
                     ) : (
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
+                          {isAllStaffMode && track.user && (
+                            <div className="mb-2 flex items-center">
+                              <span className="font-semibold text-indigo-600">
+                                {track.user.name}
+                              </span>
+                              {track.user.position && (
+                                <span className="ml-2 text-xs text-gray-500">
+                                  ({track.user.position})
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div className="flex items-center mb-2">
                             {track.was_paid ? (
                               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />

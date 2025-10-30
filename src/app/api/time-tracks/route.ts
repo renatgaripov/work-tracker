@@ -16,9 +16,26 @@ export async function GET(request: NextRequest) {
         const date = searchParams.get('date');
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
-        const userId = searchParams.get('userId') || session.user.id;
+        const userId = searchParams.get('userId');
+        // Убраны ограничения по лимиту/смещению — возвращаем все записи за период
 
-        const whereClause: Record<string, unknown> = { user_id: parseInt(userId) };
+        const whereClause: {
+            user_id?: number | { in: number[] };
+            date?: { gte: Date; lt: Date };
+        } = {};
+
+        // Если userId не передан или null, получаем данные для всех сотрудников (role = 'user')
+        if (userId && userId !== 'null') {
+            whereClause.user_id = parseInt(userId);
+        } else {
+            // Получаем ID всех пользователей с ролью 'user'
+            const usersWithRoleUser = await prisma.user.findMany({
+                where: { role: 'user' },
+                select: { id: true },
+            });
+            const userIds = usersWithRoleUser.map((u) => u.id);
+            whereClause.user_id = { in: userIds };
+        }
 
         if (date) {
             const start = new Date(date);
@@ -45,6 +62,7 @@ export async function GET(request: NextRequest) {
             include: {
                 user: {
                     select: {
+                        id: true,
                         name: true,
                         position: true,
                     },

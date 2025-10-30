@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [isAllStaffMode, setIsAllStaffMode] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -29,9 +30,15 @@ export default function Dashboard() {
     if (!session) {
       router.push('/login')
     } else {
-      // По умолчанию выбираем текущего пользователя
+      // По умолчанию: админу/руку — "Весь штат", сотруднику — он сам
       // @ts-expect-error: тадо
-      setSelectedUserId(parseInt(session.user.id as string))
+      if (session.user.role === 'admin' || session.user.role === 'moderator') {
+        setIsAllStaffMode(true)
+        setSelectedUserId(null)
+      } else {
+        // @ts-expect-error: тадо
+        setSelectedUserId(parseInt(session.user.id as string))
+      }
     }
   }, [session, status, router])
 
@@ -68,6 +75,14 @@ export default function Dashboard() {
     return null
   }
 
+  // @ts-expect-error: тадо
+  const currentUserIdNum = parseInt(session.user.id as string)
+  // @ts-expect-error: тадо
+  const isAdminOrModerator = session.user.role === 'admin' || session.user.role === 'moderator'
+  const effectiveUserId = isAdminOrModerator
+    ? (isAllStaffMode ? null : (selectedUserId ?? currentUserIdNum))
+    : currentUserIdNum
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -90,13 +105,15 @@ export default function Dashboard() {
                 selectedUserId={selectedUserId}
                 // @ts-expect-error: тадо
                 currentUserId={parseInt(session.user.id as string)}
+                isAllStaffMode={isAllStaffMode}
+                onAllStaffModeChange={setIsAllStaffMode}
               />
             )}
           </div>
 
           {/* Statistics */}
           <Statistics 
-            userId={selectedUserId} 
+            userId={effectiveUserId} 
             selectedMonth={currentMonth}
             onGoToToday={handleGoToToday}
             refreshKey={refreshKey}
@@ -107,12 +124,12 @@ export default function Dashboard() {
             key={refreshKey}
             onDayClick={handleDayClick}
             onAddTime={handleAddTime}
-            userId={selectedUserId}
+            userId={effectiveUserId ?? currentUserIdNum}
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
-            // @ts-expect-error: тадо
-            currentUserId={parseInt(session.user.id as string)}
+            currentUserId={currentUserIdNum}
             onGoToToday={handleGoToToday}
+            isAllStaffMode={isAdminOrModerator ? isAllStaffMode : false}
           />
         </div>
       </main>
@@ -134,9 +151,9 @@ export default function Dashboard() {
             onClose={() => setShowDetailsModal(false)}
             date={selectedDate}
             onTimeUpdated={handleTimeAdded}
-            userId={selectedUserId}
-            // @ts-expect-error: тадо
-            currentUserId={parseInt(session.user.id as string)}
+            userId={effectiveUserId ?? currentUserIdNum}
+            currentUserId={currentUserIdNum}
+            isAllStaffMode={isAllStaffMode}
           />
         </>
       )}

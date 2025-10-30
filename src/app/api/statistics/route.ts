@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const period = searchParams.get('period') || 'today';
-        const userId = searchParams.get('userId') || session.user.id;
+        const userId = searchParams.get('userId');
+        const isAllStaff = !userId || userId === 'null';
 
         const now = new Date();
         let startDate: Date;
@@ -53,25 +54,53 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        console.log('Statistics request:', { period, userId, startDate, endDate });
+        console.log('Statistics request:', { period, userId, isAllStaff, startDate, endDate });
 
-        // Получаем пользователя со ставками
-        const user = await prisma.user.findUnique({
-            where: { id: parseInt(userId) },
-            include: { rates: true },
-        });
+        // Получаем пользователя со ставками (только если не все сотрудники)
+        let user = null;
+        if (!isAllStaff) {
+            user = await prisma.user.findUnique({
+                where: { id: parseInt(userId || session.user.id) },
+                include: { rates: true },
+            });
+        }
+
+        const whereClause: {
+            date: { gte: Date; lt: Date };
+            user_id?: number | { in: number[] };
+        } = {
+            date: {
+                gte: startDate,
+                lt: endDate,
+            },
+        };
+
+        if (!isAllStaff) {
+            whereClause.user_id = parseInt(userId || session.user.id);
+        } else {
+            // Для всех сотрудников получаем ID всех пользователей с ролью 'user'
+            const usersWithRoleUser = await prisma.user.findMany({
+                where: { role: 'user' },
+                select: { id: true },
+            });
+            const userIds = usersWithRoleUser.map((u) => u.id);
+            whereClause.user_id = { in: userIds };
+        }
 
         const timeTracks = await prisma.timeTrack.findMany({
-            where: {
-                user_id: parseInt(userId),
-                date: {
-                    gte: startDate,
-                    lt: endDate,
-                },
+            where: whereClause,
+            include: {
+                user: isAllStaff
+                    ? {
+                          include: {
+                              rates: true,
+                          },
+                      }
+                    : false,
             },
         });
 
-        console.log('Found time tracks:', timeTracks.length, timeTracks);
+        console.log('Found time tracks:', timeTracks.length);
 
         const currentRate = getUserRateForDate(user?.rates || []);
         console.log('User rate:', currentRate);
@@ -93,7 +122,17 @@ export async function GET(request: NextRequest) {
         let unpaidEarnings = 0;
 
         for (const track of timeTracks) {
-            const trackRate = getUserRateForDate(user?.rates || [], new Date(track.date)) ?? 0;
+            let trackRate = 0;
+
+            if (isAllStaff && track.user && 'rates' in track.user && track.user.rates) {
+                // Для режима "все сотрудники" берем ставку каждого пользователя на дату записи
+                const rates = track.user.rates as { id: number; rate: number; valid_from: Date }[];
+                trackRate = getUserRateForDate(rates, new Date(track.date)) ?? 0;
+            } else if (!isAllStaff && user) {
+                // Для одного пользователя берем его ставку
+                trackRate = getUserRateForDate(user.rates || [], new Date(track.date)) ?? 0;
+            }
+
             const trackEarnings = trackRate > 0 ? (track.time / 60) * trackRate : 0;
             totalEarnings += trackEarnings;
 

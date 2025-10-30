@@ -22,15 +22,16 @@ export function getUserRateForDate(
         return null;
     }
 
-    // Сортируем ставки по дате начала действия (от более поздних к более ранним)
-    const sortedRates = [...rates].sort((a, b) => new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime());
+    // Сортируем ставки по дате начала действия (от более ранних к более поздним)
+    const sortedRates = [...rates].sort((a, b) => new Date(a.valid_from).getTime() - new Date(b.valid_from).getTime());
 
-    // Находим первую ставку, которая действует на указанную дату или раньше
+    // Находим последнюю ставку, которая действует на указанную дату или раньше
+    let selectedRate = null;
     for (const rate of sortedRates) {
         if (new Date(rate.valid_from) <= targetDate) {
-            return rate.rate;
+            selectedRate = rate;
         }
     }
 
-    return null;
+    return selectedRate?.rate ?? null;
 }

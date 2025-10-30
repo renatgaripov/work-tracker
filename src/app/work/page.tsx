@@ -58,6 +58,7 @@ export default function StatisticsPage() {
   const [selectedTracks, setSelectedTracks] = useState<number[]>([])
   const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [isAllStaffMode, setIsAllStaffMode] = useState(false)
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false)
   const monthDropdownRef = useRef<HTMLDivElement>(null)
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null)
@@ -68,9 +69,15 @@ export default function StatisticsPage() {
     if (!session) {
       router.push('/login')
     } else {
-      // По умолчанию выбираем текущего пользователя
+      // По умолчанию: админу/руку — "Весь штат", сотруднику — он сам
       // @ts-expect-error: тадо
-      setSelectedUserId(parseInt(session.user.id as string))
+      if (session.user.role === 'admin' || session.user.role === 'moderator') {
+        setIsAllStaffMode(true)
+        setSelectedUserId(null)
+      } else {
+        // @ts-expect-error: тадо
+        setSelectedUserId(parseInt(session.user.id as string))
+      }
       fetchMonthlyStats()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,6 +245,8 @@ export default function StatisticsPage() {
                 selectedUserId={selectedUserId}
                 // @ts-expect-error: тадо
                 currentUserId={parseInt(session.user.id as string)}
+                isAllStaffMode={isAllStaffMode}
+                onAllStaffModeChange={setIsAllStaffMode}
               />
             )}
           </div>
