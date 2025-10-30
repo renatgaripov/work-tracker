@@ -81,15 +81,16 @@ export default function Navigation() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+            <button
+              onClick={() => router.push('/profile')}
+              className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+            >
               <User className="w-5 h-5 text-gray-500" />
-              <div>
-                {/* @ts-expect-error: тадо */}
+              <div className="text-left">
                 <p className="text-sm font-medium text-gray-900">{session?.user.name}</p>
-                {/* @ts-expect-error: тадо */}
-                <p className="text-xs text-gray-500">{session?.user.position}</p>
+                <p className="text-xs text-gray-500">{session?.user.role === 'admin' ? 'Администратор' : session?.user.role === 'moderator' ? 'Руководитель' : 'Сотрудник'}</p>
               </div>
-            </div>
+            </button>
             
             <button
               onClick={() => router.push('/change-password')}
