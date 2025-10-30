@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { User as UserIcon, DollarSign, Clock3, CalendarClock, History, CircleDollarSign, ClipboardList, CheckCircle2, XCircle } from 'lucide-react'
@@ -77,185 +77,180 @@ export default function ProfilePage() {
     load()
   }, [session, status, router])
 
-  const metrics = useMemo(() => {
-    if (!userInfo) return null
-    const rates = userInfo.rates
-    const totalTracks = tracks.length
-    const paidTracks = tracks.filter(t => t.was_paid).length
-    const unpaidTracks = totalTracks - paidTracks
-    const totalMinutes = tracks.reduce((s, t) => s + t.time, 0)
-    const totalHours = totalMinutes / 60
-
-    // по месяцам для среднего без нулевых
-    const mapMonthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const minutesByMonth = new Map<string, number>()
-    const earningsByMonth = new Map<string, number>()
-
-    let totalEarnings = 0
-    let unpaidEarnings = 0
-    for (const tr of tracks) {
-      const d = new Date(tr.date)
-      const rate = getRateForDate(rates, d) || 0
-      const earn = (tr.time / 60) * rate
-      totalEarnings += earn
-      if (!tr.was_paid) unpaidEarnings += earn
-      const key = mapMonthKey(d)
-      minutesByMonth.set(key, (minutesByMonth.get(key) || 0) + tr.time)
-      earningsByMonth.set(key, (earningsByMonth.get(key) || 0) + earn)
-    }
-
-    const nonZeroMonthsHours = Array.from(minutesByMonth.values()).filter(v => v > 0).map(v => v / 60)
-    const nonZeroMonthsEarnings = Array.from(earningsByMonth.values()).filter(v => v > 0)
-    const avgHoursPerMonth = nonZeroMonthsHours.length ? nonZeroMonthsHours.reduce((a, b) => a + b, 0) / nonZeroMonthsHours.length : 0
-    const avgEarningsPerMonth = nonZeroMonthsEarnings.length ? nonZeroMonthsEarnings.reduce((a, b) => a + b, 0) / nonZeroMonthsEarnings.length : 0
-
-    // стаж: с первого трека или created_at — что раньше
-    const firstTrackDate = tracks.length ? new Date(Math.min(...tracks.map(t => new Date(t.date).getTime()))) : null
-    const createdAt = new Date(userInfo.created_at)
-    const tenureStart = firstTrackDate ? (firstTrackDate < createdAt ? firstTrackDate : createdAt) : createdAt
-    const tenureDays = Math.max(0, Math.floor((Date.now() - tenureStart.getTime()) / (1000 * 60 * 60 * 24)))
-
-    const currentRate = getRateForDate(rates, new Date()) || 0
-
-    return {
-      totalTracks,
-      paidTracks,
-      unpaidTracks,
-      totalHours,
-      totalEarnings,
-      unpaidEarnings,
-      avgHoursPerMonth,
-      avgEarningsPerMonth,
-      tenureStart,
-      tenureDays,
-      currentRate,
-    }
-  }, [tracks, userInfo])
-
-  if (loading || !userInfo || !metrics) {
+  if (loading || !userInfo) {
     return (
-      <div className="space-y-4">
-        <div className="h-8 w-48 bg-gray-200 animate-pulse rounded" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-lg animate-pulse" />
+      <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow">
+        <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mb-6" />
+        <div className="space-y-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className={`h-12 ${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'} animate-pulse rounded`} />
           ))}
         </div>
       </div>
     )
   }
 
+  const rates = userInfo.rates
+  const totalTracks = tracks.length
+  const paidTracks = tracks.filter(t => t.was_paid).length
+  const unpaidTracks = totalTracks - paidTracks
+  const totalMinutes = tracks.reduce((s, t) => s + t.time, 0)
+  const totalHours = totalMinutes / 60
+  const paidMinutes = tracks.filter(t => t.was_paid).reduce((s, t) => s + t.time, 0)
+  const unpaidMinutes = totalMinutes - paidMinutes
+  const paidHours = paidMinutes / 60
+  const unpaidHours = unpaidMinutes / 60
+
+  let totalEarnings = 0
+  let unpaidEarnings = 0
+  for (const tr of tracks) {
+    const d = new Date(tr.date)
+    const rate = getRateForDate(rates, d) || 0
+    const earn = (tr.time / 60) * rate
+    totalEarnings += earn
+    if (!tr.was_paid) unpaidEarnings += earn
+  }
+
+  const currentRate = getRateForDate(rates, new Date()) || 0
+
+  // Стаж
+  const firstTrackDate = tracks.length ? new Date(Math.min(...tracks.map(t => new Date(t.date).getTime()))) : null
+  const createdAt = new Date(userInfo.created_at)
+  const tenureStart = firstTrackDate ? (firstTrackDate < createdAt ? firstTrackDate : createdAt) : createdAt
+  const tenureDays = Math.max(0, Math.floor((Date.now() - tenureStart.getTime()) / (1000 * 60 * 60 * 24)))
+  const tenureYears = Math.floor(tenureDays / 365)
+  const tenureMonths = Math.floor((tenureDays % 365) / 30)
+
   return (
-    <div className="space-y-8 text-gray-900">
-      <div className="flex items-center space-x-3">
+    <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow">
+      <div className="flex items-center space-x-3 mb-6">
         <UserIcon className="w-8 h-8 text-indigo-600" />
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Личный кабинет</h2>
-          <p className="text-sm text-gray-600">{userInfo.name} — {userInfo.role === 'user' ? 'Сотрудник' : userInfo.role}</p>
-        </div>
+        <h2 className="text-xl font-semibold text-gray-900">Личный кабинет</h2>
       </div>
-      {/* Персональная информация */}
-      <section className="space-y-4 bg-white rounded-lg shadow p-6">
-        <h3 className="text-base font-semibold text-gray-900">Персональная информация</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">ID пользователя</div>
-            <div className="text-lg font-medium">{userInfo.id}</div>
+
+      <form className="space-y-6">
+        {/* Основная информация - полосатая сетка */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border rounded-lg overflow-hidden">
+          {[
+            { label: 'ID пользователя', value: userInfo.id },
+            { label: 'Логин', value: userInfo.login },
+            { label: 'Имя', value: userInfo.name },
+            { label: 'Должность', value: userInfo.position },
+            { label: 'Роль', value: userInfo.role === 'admin' ? 'Администратор' : userInfo.role === 'moderator' ? 'Руководитель' : 'Сотрудник' },
+            { 
+              label: 'Текущая ставка (₽/ч)', 
+              value: formatInt(currentRate),
+              icon: <DollarSign className="w-4 h-4 text-emerald-600" />
+            },
+          ].map((item, index) => (
+            <div 
+              key={item.label} 
+              className={`p-4 flex items-start ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+            >
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {item.icon && <span className="mr-1">{item.icon}</span>}
+                  {item.label}
+                </label>
+                <div className="text-gray-900">{item.value}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Стаж - как отдельная полосатая строка */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border rounded-lg overflow-hidden">
+          <div className="p-4 bg-gray-50">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Стаж работы (с)</label>
+            <div className="text-gray-900">{new Date(tenureStart).toLocaleDateString('ru-RU')}</div>
           </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Логин</div>
-            <div className="text-lg font-medium">{userInfo.login}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Имя</div>
-            <div className="text-lg font-medium">{userInfo.name}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Должность</div>
-            <div className="text-lg font-medium">{userInfo.position}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Роль</div>
-            <div className="text-lg font-medium">{userInfo.role === 'admin' ? 'Администратор' : userInfo.role === 'moderator' ? 'Руководитель' : 'Сотрудник'}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500 flex items-center space-x-2"><DollarSign className="w-4 h-4 text-emerald-600" /><span>Текущая ставка</span></div>
-            <div className="text-lg font-medium flex items-center space-x-2">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
-              <span>{formatInt(metrics.currentRate)} ₽/ч</span>
+          <div className="p-4 bg-white">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Стаж</label>
+            <div className="text-gray-900">
+              {tenureYears > 0 && `${tenureYears} лет `}
+              {tenureMonths > 0 && `${tenureMonths} мес.`}
             </div>
           </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Стаж работы (с)</div>
-            <div className="text-lg font-medium">{new Date(metrics.tenureStart).toLocaleDateString('ru-RU')}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Стаж</div>
-            <div className="text-lg font-medium">{(() => {
-              const days = metrics.tenureDays
-              if (days < 30) return `${days} дн.`
-              const months = Math.floor(days / 30)
-              if (months < 12) return `${months} мес.`
-              const years = Math.floor(months / 12)
-              const restMonths = months % 12
-              return restMonths > 0 ? `${years} г. ${restMonths} мес.` : `${years} г.`
-            })()}</div>
-          </div>
         </div>
-      </section>
 
-      {/* Время и трекинг */}
-      <section className="space-y-4 bg-white rounded-lg shadow p-6">
-        <h3 className="text-base font-semibold text-gray-900">Время и трекинг</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500 flex items-center space-x-2"><ClipboardList className="w-4 h-4 text-indigo-600" /><span>Всего треков</span></div>
-            <div className="text-lg font-medium">{formatInt(metrics.totalTracks)}</div>
+        {/* Треки времени - полосатые карточки */}
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-3">Трекинг времени</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border rounded-lg overflow-hidden">
+            <div className="p-4 bg-gray-50 flex items-center">
+              <ClipboardList className="w-5 h-5 text-indigo-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Всего треков</div>
+                <div className="text-gray-900 font-medium">{formatInt(totalTracks)}</div>
+              </div>
+            </div>
+            <div className="p-4 bg-white flex items-center">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Оплачено</div>
+                <div className="text-gray-900 font-medium">{formatInt(paidTracks)}</div>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 flex items-center">
+              <XCircle className="w-5 h-5 text-red-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Не оплачено</div>
+                <div className="text-gray-900 font-medium">{formatInt(unpaidTracks)}</div>
+              </div>
+            </div>
           </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500 flex items-center space-x-2"><XCircle className="w-4 h-4 text-red-600" /><span>Неоплаченных треков</span></div>
-            <div className="text-lg font-medium">{formatInt(metrics.unpaidTracks)}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500 flex items-center space-x-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span>Оплаченных треков</span></div>
-            <div className="text-lg font-medium">{formatInt(metrics.paidTracks)}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Всего часов</div>
-            <div className="text-lg font-medium flex items-center space-x-2"><Clock3 className="w-4 h-4 text-indigo-600" /><span>{metrics.totalHours.toFixed(1)}</span></div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500">Среднее часов/мес (без нулевых)</div>
-            <div className="text-lg font-medium">{metrics.avgHoursPerMonth.toFixed(1)}</div>
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-0 border rounded-lg overflow-hidden">
+            <div className="p-4 bg-white flex items-center">
+              <Clock3 className="w-5 h-5 text-indigo-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Всего часов</div>
+                <div className="text-gray-900 font-medium">{totalHours.toFixed(1)}</div>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 flex items-center">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Оплачено</div>
+                <div className="text-gray-900 font-medium">{paidHours.toFixed(1)}</div>
+              </div>
+            </div>
+            <div className="p-4 bg-white flex items-center">
+              <XCircle className="w-5 h-5 text-red-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Не оплачено</div>
+                <div className="text-gray-900 font-medium">{unpaidHours.toFixed(1)}</div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* Деньги */}
-      <section className="space-y-4 bg-white rounded-lg shadow p-6">
-        <h3 className="text-base font-semibold text-gray-900">Деньги</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500 flex items-center space-x-2"><CircleDollarSign className="w-4 h-4 text-emerald-600" /><span>Всего заработано</span></div>
-            <div className="text-lg font-medium flex items-center space-x-2"><CalendarClock className="w-4 h-4 text-emerald-600" /><span>{formatMoney(metrics.totalEarnings)}</span></div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500 flex items-center space-x-2"><CircleDollarSign className="w-4 h-4 text-indigo-600" /><span>Средняя выручка/мес (без нулевых)</span></div>
-            <div className="text-lg font-medium">{formatMoney(metrics.avgEarningsPerMonth)}</div>
-          </div>
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
-            <div className="text-xs text-gray-500 flex items-center space-x-2"><CircleDollarSign className="w-4 h-4 text-red-600" /><span>Ожидает оплаты</span></div>
-            <div className="text-lg font-medium">{formatMoney(metrics.unpaidEarnings)}</div>
+        {/* Финансы - полосатые карточки */}
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-3">Финансовая информация</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border rounded-lg overflow-hidden">
+            <div className="p-4 bg-gray-50 flex items-center">
+              <CalendarClock className="w-5 h-5 text-emerald-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Всего заработано</div>
+                <div className="text-gray-900 font-medium">{formatMoney(totalEarnings)}</div>
+              </div>
+            </div>
+            <div className="p-4 bg-white flex items-center">
+              <CircleDollarSign className="w-5 h-5 text-red-600 mr-2" />
+              <div>
+                <div className="text-xs text-gray-500">Ожидает оплаты</div>
+                <div className="text-gray-900 font-medium">{formatMoney(unpaidEarnings)}</div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center space-x-2">
-          <History className="w-4 h-4 text-gray-600" />
-          <h3 className="text-sm font-medium text-gray-900">История ставок</h3>
-        </div>
-        <div className="p-4">
+        {/* История ставок - полосатая таблица */}
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center space-x-2">
+            <History className="w-5 h-5 text-gray-600" />
+            <span>История ставок</span>
+          </h3>
           {userInfo.rates.length === 0 ? (
             <div className="text-sm text-gray-500">История ставок отсутствует</div>
           ) : (
@@ -263,15 +258,15 @@ export default function ProfilePage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ставка</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действует с</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ставка (₽/ч)</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">С даты</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {userInfo.rates.map((r) => (
-                    <tr key={r.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{r.rate} ₽/ч</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(r.valid_from).toLocaleDateString('ru-RU')}</td>
+                <tbody className="divide-y divide-gray-200">
+                  {userInfo.rates.map((r, index) => (
+                    <tr key={r.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{formatInt(r.rate)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{new Date(r.valid_from).toLocaleDateString('ru-RU')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -279,9 +274,7 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
-      </div>
+      </form>
     </div>
   )
 }
-
-
